@@ -1,10 +1,11 @@
-import os, sys, numpy
+import os, sys
+import numpy as np
 module_path = os.path.abspath(os.path.join('../tools'))
 if module_path not in sys.path: sys.path.append(module_path)
 from DangerousGridWorld import GridWorld
 
 
-def random_dangerous_grid_world( environment ):
+def random_dangerous_grid_world( environment:GridWorld ):
 	"""
 	Performs a random trajectory on the given Dangerous Grid World environment 
 	
@@ -15,14 +16,20 @@ def random_dangerous_grid_world( environment ):
 		trajectory: an array containing the sequence of states visited by the agent
 	"""
 	trajectory = []
-	#
-	# YOUR CODE HERE!
-	#
+	
+	actions = environment.action_space
+
 	for step in range(10):
-		#
-		# YOUR CODE HERE!
-		#
-		if False: break # <- Hint: check if the state is terminal
+
+		current_state = environment.state_to_pos(environment.robot_state)
+		
+
+		trajectory.append(current_state)
+		a = np.random.choice(actions)
+		new_state = environment.sample(a)
+		environment.robot_state = new_state
+		
+		if environment.is_terminal(environment.robot_state): break # <- Hint: check if the state is terminal
 	
 	return trajectory
 
@@ -35,9 +42,9 @@ class RecyclingRobot():
 	Attributes
 	----------
 		observation_space : int
-			define the number of possible actions of the environment
-		action_space: int
 			define the number of possible states of the environment
+		action_space: int
+			define the number of possible actions of the environment
 		actions: dict
 			a dictionary that translate the 'action code' in human languages
 		states: dict
@@ -64,33 +71,39 @@ class RecyclingRobot():
 		self.r_wait = 0.2
 
 		# Defining the environment variables
-		self.observation_space = None
-		self.action_space = None
-		self.actions = None
-		self.states = None
+		self.observation_space = 2
+		self.action_space = 3
+		self.actions = {0:'SEARCH', 1:'WAIT', 2:'RECHARGE'}
+		self.states = {0:'HIGH', 1:'LOW'}
 
 
 	def reset( self ):
-		#
-		# YOUR CODE HERE!
-		#
+		self.state = 0
 		return self.state
+
 
 
 	def step( self, action ):
 
 		reward = 0
-		#
-		# YOUR CODE HERE!
-		#
+		if action == 0:
+			# SEARCH
+			reward += self.r_search
+			self.state = 1 if np.random.rand() < self.alfa else 0
+		elif action == 1:
+			#WAIT
+			reward += self.r_wait
+			self.state = 0 if np.random.rand() < self.beta else 1
+		elif action == 2:
+			self.state = 0 
+		else:
+			raise ValueError("Input error: action isn't in action space.")
+
 		return self.state, reward, False, None
 
 
 	def render( self ):
-
-		#
-		# YOUR CODE HERE!
-		#
+		print(f"Current state: {self.states[self.state]}")
 		return True
 
 
@@ -110,10 +123,11 @@ def main():
 	print( "\nB) Custom Environment: Recycling Robot" )
 	env = RecyclingRobot()
 	state = env.reset()
+
 	ep_reward = 0
 	
 	for step in range(10):
-		a = numpy.random.randint( 0, env.action_space )
+		a = np.random.randint( 0, env.action_space )
 		new_state, r, _, _ = env.step( a )
 		ep_reward += r
 		print( f"\tFrom state '{env.states[state]}' selected action '{env.actions[a]}': \t total reward: {ep_reward:1.1f}" )

@@ -15,6 +15,7 @@ class GridWorld( gym.Env ):
 		self.actions = {0: 'L', 1: 'R', 2: 'U', 3: 'D'}
 
 		#
+		#
 		self.start_state = 0
 		self.goal_state = 48
 		self.walls = [8, 9, 16, 21, 23, 30, 36, 37] + [10, 17, 24, 31, 38]
@@ -62,7 +63,7 @@ class GridWorld( gym.Env ):
 
 			
 	def get_full_transition_table( self, state, action ):
-
+		
 		transition_table = [ 0 for _ in range(self.state_number) ]
 		possible_actions = sum( [1 if el != None else 0 for el in self.available_action[state]] )
 		residual_probability = 1
