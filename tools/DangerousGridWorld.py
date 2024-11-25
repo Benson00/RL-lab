@@ -211,11 +211,14 @@ class GridWorld( gym.Env ):
 		return self.random_initial_state()
 
 
-	def sample_episode( self, policy, max_length=25 ):
+	def sample_episode( self, policy, initial_state=None, max_length=25 ):
 
 		episode = []
 
-		robot_state = self.random_initial_state()
+		if initial_state is None:
+			robot_state = self.random_initial_state()
+		else:
+			robot_state = initial_state
 
 		while True:
 			max_length -= 1

@@ -29,8 +29,7 @@ Following the link to the code snippets for the lessons:
 **First Semester**
 - [x] Lesson 1: MDP and Gym Environments [Slides](slides/slides_lesson_1.pdf), [Code](lessons/lesson_1_code.py), [Results](results/lesson_1_results.txt)
 - [x] Lesson 2: Multi-Armed Bandit [Slides](slides/slides_lesson_2.pdf), [Code](lessons/lesson_2_code.py), [Results](results/lesson_2_results.txt)
-<!---  - [ ] Lesson 3: Value/Policy Iteration [Slides](slides/slides_lesson_3.pdf), [Code](lessons/lesson_3_code.py), [Results](results/lesson_3_results.txt) --->
-<!---  - [ ] Lesson 4: Monte Carlo RL methods [Slides](slides/slides_lesson_4.pdf), [Code](lessons/lesson_4_code.py), [Results](results/lesson_4_results.txt) --->
+- [x] Lesson 3: Monte Carlo RL methods [Slides](slides/slides_lesson_3.pdf), [Code](lessons/lesson_3_code.py), [Results](results/lesson_3_results.txt)
 <!---  - [ ] Lesson 5: Temporal difference methods [Slides](slides/slides_lesson_5.pdf), [Code](lessons/lesson_5_code.py), [Results](results/lesson_5_results.txt) --->
 <!---  - [ ] Lesson 6: Dyna-Q [Slides](slides/slides_lesson_6.pdf), [Code](lessons/lesson_6_code.py), [Results](results/lesson_6_results.txt) --->
 
@@ -40,6 +39,9 @@ Following the link to the code snippets for the lessons:
 <!---  - [ ] Lesson 9: REINFORCE [Slides](slides/slides_lesson_9.pdf), [Code](lessons/lesson_9_code.py), [Results](results/lesson_9_result.png) --->
 <!---  - [ ] Lesson 10: A2C [Slides](slides/slides_lesson_10.pdf), [Code](lessons/lesson_10_code.py), [Results](results/lesson_10_result.png) --->
 <!---  - [ ] Lesson 11: DRL in Practice [Code!](lessons/lesson_11_code.py) [Results 1!](results/lesson_11_result.png) [Results 2!](results/lesson_11_results_TB3.png) [Slides!](slides/slides_lesson_11.pdf) --->
+
+**Extra exercise**
+- [x] Lesson Extra: Value/Policy Iteration [Slides](slides/slides_lesson_extra.pdf), [Code](lessons/lesson_extra_code.py), [Results](results/lesson_extra_results.txt)
 
 ## Tutorials
 This repo includes a set of introductory tutorials to help accomplish the exercises. In detail, we provide the following Jupyter notebook that contains the basic instructions for the lab:
