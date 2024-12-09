@@ -20,9 +20,11 @@ def on_policy_mc_epsilon_soft( environment, maxiters=5000, eps=0.3, gamma=0.99 )
 	
 	p = [[0 for _ in range(environment.action_space)] for _ in range(environment.observation_space)]   
 	Q = [[0 for _ in range(environment.action_space)] for _ in range(environment.observation_space)]
+	
 	#
 	# YOUR CODE HERE!
 	#
+	
 	deterministic_policy = [numpy.argmax(p[state]) for state in range(environment.observation_space)]	
 	return deterministic_policy
 	
@@ -42,6 +44,7 @@ def on_policy_mc_exploring_starts( environment:GridWorld, maxiters=5000, eps=0.3
 	"""
 	p = [[0 for _ in range(environment.action_space)] for _ in range(environment.observation_space)]   
 	Q = [[0 for _ in range(environment.action_space)] for _ in range(environment.observation_space)]
+<<<<<<< HEAD
 	Returns = [[0 for _ in range(environment.action_space)] for _ in range(environment.observation_space)]
 	#
 	# YOUR CODE HERE!
@@ -55,6 +58,13 @@ def on_policy_mc_exploring_starts( environment:GridWorld, maxiters=5000, eps=0.3
 			Q[episode[t][0]][episode[t][1]] = numpy.mean(Returns[episode[t][0]][episode[t][1]])
 			for action in range(environment.action_space):
 				p[episode[t][0]][action] = numpy.argmax(Q[episode[t][0]])
+=======
+	
+	#
+	# YOUR CODE HERE!
+	#
+	
+>>>>>>> d2fb8767606981bcf03fecfbb483df1bc0983921
 	deterministic_policy = [numpy.argmax(p[state]) for state in range(environment.observation_space)]	
 	return deterministic_policy
 
@@ -70,12 +80,12 @@ def main():
 	env.render()
 
 	print( "\n3) MC On-Policy (with exploring starts)" )
-	mc_policy = on_policy_mc_exploring_starts( env )
+	mc_policy = on_policy_mc_exploring_starts( env, maxiters=5000 )
 	env.render_policy( mc_policy )
 	print( "\tExpected reward following this policy:", env.evaluate_policy(mc_policy) )
 	
 	print( "\n3) MC On-Policy (for epsilon-soft policies)" )
-	mc_policy = on_policy_mc_epsilon_soft( env )
+	mc_policy = on_policy_mc_epsilon_soft( env, maxiters=5000 )
 	env.render_policy( mc_policy )
 	print( "\tExpected reward following this policy:", env.evaluate_policy(mc_policy) )
 	
