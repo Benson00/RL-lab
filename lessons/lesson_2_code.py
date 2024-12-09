@@ -19,25 +19,19 @@ class MultiArmedBandit():
 	-------
 		action( action )
 			return the reward obtained selecting the action 'action'; this value is obtained 
-			sampling from a distribution with mean=q_star[action] and varaince=self.sampling_variance
+			sampling from a distribution with mean=q_star[action] and variance=self.sampling_variance
 	"""
 
 	def __init__( self, levers ):
-		#
-		# YOUR CODE HERE!
-		#	
-		self.levers = None
-		self.q_star = None
-		self.sampling_variance = None
+		self.levers = levers
+		self.q_star = np.random.normal(0,1,levers)
+		self.sampling_variance = 1
 			
 	def action( self, action ):
-		#
-		# YOUR CODE HERE!
-		#
-		return None
+		return np.random.normal(loc=self.q_star[action], scale=self.sampling_variance)
 
 
-def banditAlgorithm( env, eps=0, maxiters=1000 ):
+def banditAlgorithm( env:MultiArmedBandit, eps=0, maxiters=1000 ):
 	"""
 	Implements the Simple Bandit Algorithm
 	
@@ -47,7 +41,7 @@ def banditAlgorithm( env, eps=0, maxiters=1000 ):
 		maxiters: number of steps to perform in the environment
 		
 	Returns:
-		avg_reward: list of the rewards obtained during the training,, averaged from the first step to the last
+		avg_reward: list of the rewards obtained during the training, averaged from the first step to the last
 		Q: the updated value function after the training
 	"""	
 
@@ -57,10 +51,14 @@ def banditAlgorithm( env, eps=0, maxiters=1000 ):
 	ep_reward = []; avg_reward = []
 
 	for _ in range(maxiters):
-		#
-		# YOUR CODE HERE!
-		#
-		ep_reward.append( 0 )
+		if np.random.rand() < eps:
+			action = np.random.randint(levers)
+		else:
+			action = np.argmax(Q)
+		reward = env.action(action)
+		N[action] += 1
+		Q[action] += (1/N[action])*(reward - Q[action])
+		ep_reward.append(reward)
 		avg_reward.append( np.mean(ep_reward) )
 
 	return avg_reward, Q
