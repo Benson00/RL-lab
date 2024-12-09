@@ -44,27 +44,12 @@ def on_policy_mc_exploring_starts( environment:GridWorld, maxiters=5000, eps=0.3
 	"""
 	p = [[0 for _ in range(environment.action_space)] for _ in range(environment.observation_space)]   
 	Q = [[0 for _ in range(environment.action_space)] for _ in range(environment.observation_space)]
-<<<<<<< HEAD
 	Returns = [[0 for _ in range(environment.action_space)] for _ in range(environment.observation_space)]
-	#
-	# YOUR CODE HERE!
-	#
-	for i in range(maxiters):
-		G = 0
-		episode = environment.sample_episode(p, initial_state=None)		
-		for t in range(len(episode)-2, 0, -1):
-			G = G*gamma + episode[t+1][2]
-			Returns.append(G)
-			Q[episode[t][0]][episode[t][1]] = numpy.mean(Returns[episode[t][0]][episode[t][1]])
-			for action in range(environment.action_space):
-				p[episode[t][0]][action] = numpy.argmax(Q[episode[t][0]])
-=======
-	
+
 	#
 	# YOUR CODE HERE!
 	#
 	
->>>>>>> d2fb8767606981bcf03fecfbb483df1bc0983921
 	deterministic_policy = [numpy.argmax(p[state]) for state in range(environment.observation_space)]	
 	return deterministic_policy
 

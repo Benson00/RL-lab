@@ -2,6 +2,7 @@ import os, sys, numpy
 module_path = os.path.abspath(os.path.join('../tools'))
 if module_path not in sys.path: sys.path.append(module_path)
 from DangerousGridWorld import GridWorld
+import numpy as np
 
 
 def epsilon_greedy(q, state, epsilon):
@@ -21,7 +22,7 @@ def epsilon_greedy(q, state, epsilon):
 	return q[state].argmax()
 
 
-def q_learning(environment, episodes, alpha, gamma, expl_func, expl_param):
+def q_learning(environment:GridWorld, episodes, alpha, gamma, expl_func, expl_param):
 	"""
 	Performs the Q-Learning algorithm for a specific environment
 	
@@ -40,10 +41,35 @@ def q_learning(environment, episodes, alpha, gamma, expl_func, expl_param):
 	q = numpy.zeros((environment.observation_space, environment.action_space))  # Q(s, a)
 	rews = numpy.zeros(episodes)
 	lengths = numpy.zeros(episodes)
-	#
-	# YOUR CODE HERE!
-	#
+	
+
 	policy = q.argmax(axis=1) # q.argmax(axis=1) automatically extract the policy from the q table
+
+	for i in range(episodes):
+
+		print(f"*** EPISODE: {i} ***")
+
+		state = environment.start_state
+		episode_reward = 0
+		while not environment.is_terminal(state):
+			lengths[i] = lengths[i] + 1
+			#choose epsilon-greedy function
+			action = epsilon_greedy(q,state,0.1)
+
+			#perform action
+			next_state = environment.sample(action,state)
+			
+			reward = environment.R[next_state]
+			rews[i] = rews[i] + reward
+			#update with policy
+			best_next_action = np.argmax(q[next_state])
+			v = q[next_state, best_next_action]
+			q[state, action] = q[state, action] + alpha * (reward + gamma*(v) - q[state, action])
+			state = next_state
+
+	policy = q.argmax(axis=1)
+	
+
 	return policy, rews, lengths
 
 
@@ -66,9 +92,30 @@ def sarsa(environment, episodes, alpha, gamma, expl_func, expl_param):
 	q = numpy.zeros((environment.observation_space, environment.action_space))  # Q(s, a)
 	rews = numpy.zeros(episodes)
 	lengths = numpy.zeros(episodes)
-	#
-	# YOUR CODE HERE!
-	#	
+	
+	for i in range(episodes):
+
+		print(f"*** EPISODE: {i} ***")
+
+		state = environment.start_state
+		episode_reward = 0
+		while not environment.is_terminal(state):
+			lengths[i] = lengths[i] + 1
+			#choose epsilon-greedy function
+			action = epsilon_greedy(q,state,0.1)
+
+			#perform action
+			next_state = environment.sample(action,state)
+			
+			reward = environment.R[next_state]
+			rews[i] = rews[i] + reward
+			#update with policy
+			best_next_action = epsilon_greedy(q,next_state,0.1)
+			v = q[next_state, best_next_action]
+			q[state, action] = q[state, action] + alpha * (reward + gamma*(v) - q[state, action])
+			state = next_state
+
+
 	policy = q.argmax(axis=1) # q.argmax(axis=1) automatically extract the policy from the q table
 	return policy, rews, lengths
 
