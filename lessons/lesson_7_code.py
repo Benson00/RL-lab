@@ -10,6 +10,7 @@ import torch.nn as nn
 import torch.optim as optim
 import seaborn as sns
 import pandas as pd
+import numpy as np
 
 
 def createDNN_keras(nInputs, nOutputs, nLayer, nNodes):
@@ -29,9 +30,10 @@ def createDNN_keras(nInputs, nOutputs, nLayer, nNodes):
 	
 	# Initialize the neural network
 	model = Sequential()
-	#
-	# YOUR CODE HERE!
-	#
+	model.add(Dense(nNodes, activation='relu', input_shape=(nInputs,)))
+	for _ in range(nLayer - 1): 
+		model.add(Dense(nNodes, activation = 'relu'))
+	model.add(Dense(nOutputs, activation='linear'))
 	return model
 
 class TorchModel(nn.Module):
@@ -49,17 +51,21 @@ class TorchModel(nn.Module):
 	# Initialize the neural network
 	def __init__(self, nInputs, nOutputs, nLayer, nNodes):
 		super(TorchModel, self).__init__()
-		self.fc1 = nn.Linear(nInputs, nNodes)
-		#
-		# YOUR CODE HERE!
-		#
-		self.output = nn.Linear(nNodes, nOutputs)
+		layers = []
+		layers.append(nn.Linear(nInputs, nNodes))
+		layers.append(nn.ReLU())
+
+		# add the hidden states
+		for _ in range(nLayer-1):
+			layers.append(nn.Linear(nNodes,nNodes))
+			layers.append(nn.ReLU())
+		
+		layers.append(nn.Linear(nNodes, nOutputs))
+		self.model = nn.Sequential(*layers)
+
 
 	def forward(self, x):
-		#
-		# YOUR CODE HERE!
-		#
-		return x
+		return self.model(x)
 
 
 def mse(network, dataset_input, target):
@@ -67,7 +73,6 @@ def mse(network, dataset_input, target):
 	Compute the MSE loss function
 
 	"""
-	
 	# Compute the predicted value, over time this value should
 	# looks more like to the expected output (i.e., target)
 	predicted_value = network(dataset_input)
@@ -97,9 +102,9 @@ def training_loop(env, neural_net, updateRule, keras=True, eps=1.0, updates=1, e
 
 	#TODO: initialize the optimizer 
 	if keras:
-		optimizer = None
+		optimizer = optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3)
 	else:
-		optimizer = None
+		optimizer = torch.optim.Adam(neural_net.parameters(), lr=1e-3)
 
 	 
 	rewards_list, memory_buffer = [], collections.deque( maxlen=1000 )
@@ -107,31 +112,40 @@ def training_loop(env, neural_net, updateRule, keras=True, eps=1.0, updates=1, e
 	for ep in range(episodes):
 
 		#TODO: reset the environment and obtain the initial state
-		state = None 
+		
+		state = env.reset()[0]
 		ep_reward = 0
 		while True:
-
+	
 			#TODO: select the action to perform exploiting an epsilon-greedy strategy
-			action = None 
+			if np.random.normal() < eps: 
+				action = env.action_space.sample()
+			else:
+				# take q_values and then take the max for the action
+				q_values = neural_net.predict(np.array([state])) if keras else neural_net(torch.tensor(state, dtype=torch.float32))
+				action = int(torch.argmax(q_values).item()) if not keras else np.argmax(q_values)
 
 			#TODO: update epsilon value
-			eps *= ...
+			eps *= 0.99
 
 			#TODO: Perform the action, store the data in the memory buffer and update the reward
-			memory_buffer.append(None)
-			ep_reward += None
+			next_state, reward, terminated, truncated, info = env.step(action)
+			done = terminated or truncated
+			memory_buffer.append([state,action,reward,next_state,done])
+			ep_reward += reward
 
 			# Perform the actual training
 			for _ in range(updates):
 				#TODO: call the update rule...
-				pass
+				DQNupdate(neural_net, keras, memory_buffer, optimizer)
 				
 
 			#TODO: modify the exit condition for the episode
-			if False: break
+			if done:
+				break
 
 			#TODO: update the current state
-			state = None
+			state = next_state
 
 		# Update the reward list to return
 		rewards_list.append(ep_reward)
@@ -144,41 +158,75 @@ def training_loop(env, neural_net, updateRule, keras=True, eps=1.0, updates=1, e
 
 
 def DQNupdate(neural_net, keras, memory_buffer, optimizer, batch_size=32, gamma=0.99):
+    """
+    Main update rule for the DQN process. Extract data from the memory buffer and update 
+    the network computing the gradient.
+    """
 
-	"""
-	Main update rule for the DQN process. Extract data from the memory buffer and update 
-	the newtwork computing the gradient.
+    # If we don't have enough samples in memory_buffer, exit
+    if len(memory_buffer) < batch_size: 
+        return 
 
-	"""
+    # Sample random indices from the memory buffer
+    indices = np.random.randint(len(memory_buffer), size=batch_size)
 
-	if len(memory_buffer) < batch_size: return
+    for idx in indices: 
+        # Extract data from the buffer
+        state, action, reward, next_state, done = memory_buffer[idx]
 
-	indices = np.random.randint( len(memory_buffer), size=batch_size)
-	for idx in indices: 
+        if keras:
+            # Convert to tensors
+            state_tensor = tf.convert_to_tensor([state], dtype=tf.float32)
+            next_state_tensor = tf.convert_to_tensor([next_state], dtype=tf.float32)
 
-		#TODO: extract data from the buffer 
-		state, action, reward, next_state, done = None, None, None, None, None
+            # Predict Q-values for current and next states
+            q_values = neural_net(state_tensor).numpy()  # Convert tensor to numpy for modification
+            next_q_values = neural_net(next_state_tensor).numpy()
 
-		#TODO: compute the target for the training
-		if keras:
-			target = None
-		else:
-			target = None
+            # Compute target Q-value
+            if done:
+                target = reward
+            else:
+                target = reward + gamma * np.max(next_q_values)
 
-		
-		#TODO: update target using the update rule...
-		if done:
-			pass
-		else:
-			pass
+            # Update the Q-value for the selected action
+            q_values[0, action] = target
 
-		#TODO: compute the gradient and perform the backpropagation step using the selected framework
-		if keras:
-			with tf.GradientTape() as tape:
-				objective = mse(neural_net, state, target)
+            # Convert updated Q-values back to tensor
+            target_tensor = tf.convert_to_tensor(q_values, dtype=tf.float32)
 
-		else:
-			pass
+            # Compute loss and backpropagation
+            with tf.GradientTape() as tape:
+                loss = tf.reduce_mean(tf.square(neural_net(state_tensor) - target_tensor))
+
+            gradients = tape.gradient(loss, neural_net.trainable_variables)
+            optimizer.apply_gradients(zip(gradients, neural_net.trainable_variables))
+
+        else:  # PyTorch implementation
+            # Convert to tensors
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)  # Add batch dimension
+            next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
+            action_tensor = torch.tensor(action, dtype=torch.long)
+            reward_tensor = torch.tensor(reward, dtype=torch.float32)
+            done_tensor = torch.tensor(done, dtype=torch.float32)
+
+            # Predict Q-values
+            q_values = neural_net(state_tensor)
+            next_q_values = neural_net(next_state_tensor).detach()  # No gradient tracking
+
+            # Compute target Q-value
+            if done:
+                target = reward_tensor
+            else:
+                target = reward_tensor + gamma * torch.max(next_q_values)
+
+            # Compute loss and perform backpropagation
+            loss = nn.functional.mse_loss(q_values[0, action_tensor], target)
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
 
 
 def main():
@@ -198,7 +246,7 @@ def main():
 	print("\nTraining torch model...\n")
 	rewards_torch = []
 	for _ in range(10):
-		env = gymnasium.make("CartPole-v1")#, render_mode="human" )
+		env = gymnasium.make("CartPole-v1", render_mode="human")
 		neural_net_torch = TorchModel(nInputs, nOutputs, nLayer, nNodes)
 		rewards_torch.append(training_loop(env, neural_net_torch, DQNupdate, keras=False, episodes=training_steps))
 
@@ -248,3 +296,4 @@ def main():
 
 if __name__ == "__main__":
 	main()	
+
