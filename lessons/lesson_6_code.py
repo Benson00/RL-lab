@@ -70,6 +70,14 @@ def find_minimum_keras(objective_function, n_iter=5000):
 	#
 	# YOUR CODE HERE!
 	#
+
+	for _ in range(n_iter):
+
+		with tf.GradientTape() as tape:
+			objective = objective_function(x,y)
+			grad = tape.gradient(objective, [x,y])
+			optimizer.apply_gradients( zip(grad, [x, y]) )
+
 	return x.numpy(), y.numpy()
 	
 
@@ -95,6 +103,11 @@ def find_minimum_torch(objective_function, n_iter=5000):
 	#
 	# YOUR CODE HERE!
 	#
+	for _ in range(5000):  
+		objective = objective_function(x, y)
+		optimizer.zero_grad()
+		objective.backward()
+		optimizer.step()
 	return x.detach().numpy().item(), y.detach().numpy().item()
 
 	
@@ -115,9 +128,11 @@ def create_DNN_keras(nInputs, nOutputs, nLayer, nNodes):
 	
 	# Initialize the neural network
 	model = Sequential()
-	#
-	# YOUR CODE HERE!
-	#
+	
+	model.add(Dense(nNodes, input_dim=nInputs, activation="relu"))
+	model.add(Dense(nNodes, activation="relu")) 
+	model.add(Dense(nNodes, activation="relu")) 
+	model.add(Dense(nOutputs, activation="linear")) 
 	return model
 
 
@@ -137,15 +152,15 @@ class TorchModel(nn.Module):
 	def __init__(self, nInputs, nOutputs, nLayer, nNodes):
 		super(TorchModel, self).__init__()
 		self.fc1 = nn.Linear(nInputs, nNodes)
-		#
-		# YOUR CODE HERE!
-		#
+		self.fc2 = nn.Linear(nNodes, nNodes)
+		self.fc3 = nn.Linear(nNodes, nNodes)
 		self.output = nn.Linear(nNodes, nOutputs)
 
 	def forward(self, x):
-		#
-		# YOUR CODE HERE!
-		#
+		x = F.relu(self.fc1(x))
+		x = F.relu(self.fc2(x))
+		x = F.relu(self.fc3(x))
+		x = self.output(x)
 		return x
 	
 	
@@ -167,9 +182,11 @@ def collect_random_trajectories(env, num_episodes=10):
 
 	for _ in range(num_episodes):
 		state = env.random_initial_state()
-		#
-		# YOUR CODE HERE!
-		#
+		# uniform policy
+		policy = [[1 / env.action_space for _ in range(env.action_space)] for _ in range(env.observation_space)]
+		memory_buffer = env.sample_episode( policy, initial_state=state)
+		#print(memory_buffer)
+
 		
 	return np.array(memory_buffer)
 
@@ -191,15 +208,19 @@ def train_DNN_keras(model, memory_buffer, epoch=20):
 
 	"""
 	
-	optimizer = tf.keras.optimizers.Adam()
+	optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
 
 	# # Preprocess data
-	dataset_input = np.vstack(memory_buffer[:, 2])
-	target = np.vstack(memory_buffer[:, 3])
+	dataset_input = np.vstack(memory_buffer[:, 1])
+	target = np.vstack(memory_buffer[:, 2])
 
-	#
-	# YOUR CODE HERE!
-	#
+	model.compile(optimizer=optimizer,
+                  loss='mse',  # Mean Squared Error, suitable for regression tasks
+                  metrics=['mae'])  # Mean Absolute Error
+
+    # Train the model
+	model.fit(dataset_input, target, epochs=epoch, verbose=1)
+
 	return model
 
 	
@@ -223,12 +244,29 @@ def train_DNN_torch(model, memory_buffer, epoch=20):
 	loss_fn = nn.MSELoss()
 
 	# Preprocess data
-	dataset_input = np.vstack(memory_buffer[:, 2])
-	target = np.vstack(memory_buffer[:, 3])
+	dataset_input = np.vstack(memory_buffer[:, 1])
+	target = np.vstack(memory_buffer[:, 2])
 
-	#
-	# YOUR CODE HERE!
-	#
+	# Convert memory buffer to NumPy array
+	memory_buffer = np.array(memory_buffer, dtype=object)
+
+    # Extract inputs (states) and targets (rewards)
+	dataset_input = np.vstack(memory_buffer[:, 1])
+	target = np.vstack(memory_buffer[:, 2])
+
+    # Convert to PyTorch tensors
+	dataset_input = torch.tensor(dataset_input, dtype=torch.float32)
+	target = torch.tensor(target, dtype=torch.float32)
+
+    # Training loop
+	model.train()
+	for _ in range(epoch):
+		optimizer.zero_grad()
+		output = model(dataset_input)
+		loss = loss_fn(output, target)
+		loss.backward()
+		optimizer.step()
+
 	return model
 
 
@@ -274,6 +312,7 @@ def main():
 	print("\nC) Collect a dataset from the interaction with the environment")
 	env = GridWorld()
 	memory_buffer = collect_random_trajectories(env, num_episodes=10)
+	print(memory_buffer.shape)
 	inp = np.array([[0], [48]])
 
 	# PART 4) Train the DNN to predict the reward of given the state
